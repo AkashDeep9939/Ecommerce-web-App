@@ -10,11 +10,13 @@ async function fetchCategories() {
 
 async function populateCtaegories() {
     const categories = await fetchCategories();
+    const loaderBackdrop = document.getElementById("loader-backdrop");
+    loaderBackdrop.style.display = 'none';
     const categoryList = document.getElementById("categoryList");
     categories.forEach(category => {
         const categoryHolder = document.createElement("div");
         const categoryLink = document.createElement("a");
-        categoryLink.href = "#";
+        categoryLink.href = `productList.html?category=${category}`;
         categoryLink.textContent = category; // setting the category name as the text of the anchor tag
         categoryHolder.classList.add("category-item", "d-flex", "align-items-center", "justify-content-center");
         categoryHolder.appendChild(categoryLink);

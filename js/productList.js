@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     async function fetchProducts() {
         const response = await axios.get("https://fakestoreapi.com/products");
@@ -6,15 +6,32 @@ document.addEventListener("DOMContentLoaded", () => {
         return response.data;
     }
 
-    // fetchProducts();
+    async function fetchProductsByCategory(category) {
+        const response = await axios.get(`https://fakestoreapi.com/products/category/${category}`);
+        console.log(response.data);
+        return response.data;
+    }
 
-    // async function populateProducts() {
-    //     const products = await fetchProducts();
+    async function fetchCategories() {
+        // this function is marked async so this will also return a promise
+        const response = await fetch("https://fakestoreapi.com/products/categories");
+        const data = await response.json();
+        return data;
+    }
+
+    const downloadedProduct = await fetchProducts();
 
     async function populateProducts(flag, customProducts) {
         let products = customProducts;
+        const queryParams = new URLSearchParams(window.location.search);
+        const queryParamsObject = Object.fromEntries(queryParams.entries());
+
         if(flag == false) {
-            products = await fetchProducts();
+            if(queryParamsObject['category']) {
+                products = await fetchProductsByCategory(queryParamsObject['category']);
+            } else {
+                products = await fetchProducts();
+            }
         }
         const productList = document.getElementById("productList");
         products.forEach(product => {
@@ -48,7 +65,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    populateProducts(false);
+    async function populateCategories() {
+        const categories = await fetchCategories();
+        const categoryList = document.getElementById("categoryList");
+        categories.forEach(category => {
+            const categoryLink = document.createElement("a");
+            categoryLink.classList.add("d-flex", "text-decoration-none");
+            categoryLink.textContent = category;
+            categoryLink.href = `productList.html?category=${category}`;
+
+            categoryList.appendChild(categoryLink);
+        })
+    }
+
+    async function downloadContentAndPopulate () {
+        Promise.all([populateProducts(false), populateCategories()])
+        .then(() => {
+            const loaderBackdrop = document.getElementById("loader-backdrop");
+            loaderBackdrop.style.display = 'none';
+        });
+    }
+    downloadContentAndPopulate();
 
     const filterSearch = document.getElementById("search");
     filterSearch.addEventListener("click", async () => {
@@ -56,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const minPrice = Number(document.getElementById("minPrice").value);
         const maxPrice = Number(document.getElementById("maxPrice").value);
         const products = await fetchProducts();
+        const product = downloadedProduct;
         filteredProducts = products.filter(product =>  product.price >= minPrice && product.price <= maxPrice);
         productList.innerHTML = "";
         populateProducts(true, filteredProducts);
